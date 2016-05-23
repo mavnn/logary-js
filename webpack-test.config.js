@@ -5,7 +5,8 @@ var path = require("path"),
 var createConfig = function(version) {
   return {
     cache: true,
-    devtool: 'inline-source-map',
+ //   devtool: 'inline-source-map',
+    devtool: 'source-map',
     output: {
       devtoolModuleFilenameTemplate: '[absolute-resource-path]',
       devtoolFallbackModuleFilenameTemplate: '[absolute-resource-path]?[hash]',

@@ -1,16 +1,19 @@
 import merge from './internal/merge';
 import jsSHA from 'jssha';
-import StackTrace from 'stacktrace-js';
+import ErrorStackParser from 'error-stack-parser';
 
 type Value = // TODO: Gauge
   { event: string };
+
+type Fields =
+  { errors: ?Array<Error> };
 
 type Message =
   { name: ?Array
   ; value: Value // TODO: value: Event|Gauge
   ; timestamp: ?Date|?string
   ; context: ?Object
-  ; fields: ?Object
+  ; fields: ?Fields
   ; session: ?Object // TODO: remove when removed from logary
   ; level: string }
 
@@ -62,12 +65,13 @@ export const Message = {
   },
 
   eventError(template, error: Error, fields = {}, context = {}) {
+    const errors = [error];
     return this.create({
       template,
       level: LogLevel.ERROR,
       fields: {
         ...fields,
-        errors: [ error ],
+        errors: errors,
       },
       context
     });
@@ -103,7 +107,7 @@ export const Middleware = {
 
   stacktrace: next => msg => {
     if (msg.fields && msg.fields.errors && msg.fields.errors.length > 0) {
-      const allErrors = msg.fields.errors.map(error => StackTrace.fromError(error));
+      const allErrors = msg.fields.errors.map(error => ErrorStackParser.parse(error));
       return Promise.all(allErrors).
         then(newErrors => {
           //console.log('newErrors', newErrors);

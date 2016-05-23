@@ -19,7 +19,7 @@ import chai, { expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import merge from '../../src/internal/merge';
 import jsSHA from 'jssha';
-import StackTrace from 'stacktrace-js';
+import ErrorStackParser from 'error-stack-parser';
 const logaryService = Targets.logaryService;
 const LZW = Compression.LZW;
 
@@ -454,7 +454,7 @@ describe('Logary', function() {
 
         expect(expect(Promise.all([
           actual,
-          StackTrace.fromError(error)
+          ErrorStackParser.parse(error)
         ])).to.eventually.be.fulfilled.then(([actualFields, expectedError]) => {
           expect(actualFields.errors[0]).to.deep.equal(expectedError);
           expect(actualFields.myField).to.equal('abc');
@@ -503,10 +503,14 @@ describe('Logary', function() {
       expect(errors).to.eventually.have.lengthOf(1);
     });
 
+    it('sets errors as array', function() {
+      const errors = createMsg().then(x => x.fields.errors.constructor);
+      expect(errors).to.eventually.equal(Array);
+    });
+
     it('sets the stacktrace', function(done) {
-      const composed = Middleware.stacktrace(logger);
       const futureMsg =
-        onerror(composed)("XYZ is undefined", "sample.js", 1, 1, err);
+        onerror(logger)("XYZ is undefined", "sample.js", 1, 1, err);
 
       expect(expect(futureMsg).to.eventually.be.fulfilled.then(msg => {
         expect(msg.fields.errors[0]).to.not.equal(err);
